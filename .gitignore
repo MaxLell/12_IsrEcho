@@ -1,0 +1,31 @@
+# STM32CubeIDE: Build- und IDE-Dateien ignorieren
+
+# Build-Ordner (ignore build outputs but keep project config)
+**/Debug/
+**/Release/
+**/build/
+
+# IDE-Metadaten (keep project files, ignore user-specific settings)
+**/.settings/
+**/.metadata/
+**/*.launch
+**/*.log
+**/*.tmp
+**/*.bak
+**/*.swp
+**/*.swo
+**/*.svd
+**/*.mxproject
+
+# Eclipse/STM32CubeIDE user-specific files
+**/language.settings.xml
+
+# OS-spezifisch
+**/.DS_Store
+**/Thumbs.db
+
+# Python
+venv/
+pythonSerialVenv/
+__pycache__/
+*.pyc
