@@ -24,6 +24,12 @@
 static BlinkyLed_Config_t tBlinkyLed = { 0 };
 static u8                 au8InputBuffer[BUFFER_SIZE] = { 0 };
 
+void HAL_UART_TxCpltCallback( UART_HandleTypeDef *huart )
+{
+    // Reset the Array
+    memset( au8InputBuffer, 0, BUFFER_SIZE );
+}
+
 void UserMain_Init()
 {
     HAL_StatusTypeDef tStatus = HAL_ERROR;
@@ -44,32 +50,59 @@ void UserMain_Loop()
     bool              bFoundNewLine = false;
     HAL_StatusTypeDef tStatus = HAL_ERROR;
     u8                u8Counter = 0;
+    u8                u8IdxNr = 0;
+    u8                u8FilledBufferEntriesCounter = 0;
 
     // Check the currently sampled Buffer for a new line character (so a
     // complete message)
-    for( u8 u8IdxNr = 0; u8IdxNr < BUFFER_SIZE; ++u8IdxNr )
+
+    for( u8IdxNr = 0; u8IdxNr < BUFFER_SIZE; ++u8IdxNr )
     {
         if( au8InputBuffer[u8IdxNr] == '\n' )
         {
+            // If everything went as expected then the au8InputBuffer is filled
+            // from the very beginning. If the Sequence is not reset (via an
+            // abort command) then the array is not filled from the front but
+            // from somewhere in the middle
+            ASSERT( 0 != au8InputBuffer[0] );
+
             u8Counter = u8IdxNr;
             bFoundNewLine = true;
             break;
         }
+        if( au8InputBuffer[u8IdxNr] != 0 )
+        {
+            u8FilledBufferEntriesCounter++;
+        }
     }
+
+    // Make sure that the buffer is not completly overflowing
+    if( ( u8FilledBufferEntriesCounter == BUFFER_SIZE ) &&
+        ( au8InputBuffer[BUFFER_SIZE] != '\n' ) )
+    {
+        // Abort everything on the TX and RX Side
+        tStatus = HAL_UART_AbortReceive_IT( &huart2 );
+        ASSERT( HAL_ERROR != tStatus );
+
+        // Clear out the Buffer
+        memset( au8InputBuffer, 0, BUFFER_SIZE );
+
+        // Restart the reception
+        tStatus = HAL_UART_Receive_IT( &huart2, au8InputBuffer, BUFFER_SIZE );
+        ASSERT( HAL_ERROR != tStatus );
+    }
+
     if( true == bFoundNewLine )
     {
         // Report back what was received
         tStatus = HAL_UART_Transmit_IT( &huart2, au8InputBuffer, u8Counter );
         ASSERT( HAL_ERROR != tStatus );
 
-        while( HAL_UART_STATE_READY != HAL_UART_GetState( &huart2 ) )
-        {
-        }
 
-        // Reset the Array
-        memset( au8InputBuffer, 0, BUFFER_SIZE );
-
-        // Restart the reception process
+        // Restart the reception process -> the abort function resets the
+        // sequence
+        tStatus = HAL_UART_AbortReceive_IT( &huart2 );
+        ASSERT( HAL_ERROR != tStatus );
         tStatus = HAL_UART_Receive_IT( &huart2, au8InputBuffer, BUFFER_SIZE );
         ASSERT( HAL_ERROR != tStatus );
 
@@ -93,5 +126,6 @@ void UserMain( void )
         UserMain_Loop();
     }
 }
+
 
 #endif /* USER_MAIN_C_ */

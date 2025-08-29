@@ -69,8 +69,13 @@ def send_command(serial_port, command):
 def main():
     ports = list_serial_ports()
     serial_port = select_serial_port(ports)
-    command = get_command()
-    send_command(serial_port, command)
+    print("Press Ctrl+C to exit.")
+    try:
+        while True:
+            command = get_command()
+            send_command(serial_port, command)
+    except KeyboardInterrupt:
+        print("\nExiting.")
 
 # ------------------- Entry Point -------------------
 if __name__ == "__main__":
