@@ -58,7 +58,7 @@ void UserMain_Loop()
 
     for( u8IdxNr = 0; u8IdxNr < BUFFER_SIZE; ++u8IdxNr )
     {
-        if( au8InputBuffer[u8IdxNr] == '\n' )
+        if( '\n' == au8InputBuffer[u8IdxNr] )
         {
             // If everything went as expected then the au8InputBuffer is filled
             // from the very beginning. If the Sequence is not reset (via an
@@ -70,15 +70,15 @@ void UserMain_Loop()
             bFoundNewLine = true;
             break;
         }
-        if( au8InputBuffer[u8IdxNr] != 0 )
+        if( 0 != au8InputBuffer[u8IdxNr] )
         {
             u8FilledBufferEntriesCounter++;
         }
     }
 
     // Make sure that the buffer is not completly overflowing
-    if( ( u8FilledBufferEntriesCounter == BUFFER_SIZE ) &&
-        ( au8InputBuffer[BUFFER_SIZE] != '\n' ) )
+    if( ( BUFFER_SIZE == u8FilledBufferEntriesCounter ) &&
+        ( '\n' != au8InputBuffer[BUFFER_SIZE] ) )
     {
         // Abort everything on the TX and RX Side
         tStatus = HAL_UART_AbortReceive_IT( &huart2 );
