@@ -26,22 +26,24 @@ static u8                 au8InputBuffer[BUFFER_SIZE] = { 0 };
 
 void UserMain_Init()
 {
+    HAL_StatusTypeDef tStatus = HAL_ERROR;
+
     // Initialize the Blinky LED
     tBlinkyLed.eLedState = E_BLINKY_LED_OFF;
     tBlinkyLed.pGpioPort = BLINKY_LED_GPIO_Port;
     tBlinkyLed.u16GpioPin = BLINKY_LED_Pin;
+
+    memset( au8InputBuffer, 0, BUFFER_SIZE );
+
+    tStatus = HAL_UART_Receive_IT( &huart2, au8InputBuffer, BUFFER_SIZE );
+    ASSERT( HAL_ERROR != tStatus );
 }
 
 void UserMain_Loop()
 {
     bool              bFoundNewLine = false;
-    u8                u8Counter = 0;
     HAL_StatusTypeDef tStatus = HAL_ERROR;
-
-    // Poll for a new message and store it in a buffer
-    tStatus = HAL_UART_Receive( &huart2, au8InputBuffer, BUFFER_SIZE,
-                                TIMEOUT_MSEC );
-    ASSERT( HAL_ERROR != tStatus );
+    u8                u8Counter = 0;
 
     // Check the currently sampled Buffer for a new line character (so a
     // complete message)
@@ -57,10 +59,19 @@ void UserMain_Loop()
     if( true == bFoundNewLine )
     {
         // Report back what was received
-        tStatus = HAL_UART_Transmit( &huart2, au8InputBuffer, u8Counter,
-                                     TIMEOUT_MSEC );
+        tStatus = HAL_UART_Transmit_IT( &huart2, au8InputBuffer, u8Counter );
         ASSERT( HAL_ERROR != tStatus );
+
+        while( HAL_UART_STATE_READY != HAL_UART_GetState( &huart2 ) )
+        {
+        }
+
+        // Reset the Array
         memset( au8InputBuffer, 0, BUFFER_SIZE );
+
+        // Restart the reception process
+        tStatus = HAL_UART_Receive_IT( &huart2, au8InputBuffer, BUFFER_SIZE );
+        ASSERT( HAL_ERROR != tStatus );
 
         // Blink the LED a couple of times
         for( u8 u8BlinkyTimes = 0; u8BlinkyTimes < NOF_BLINKS; u8BlinkyTimes++ )
